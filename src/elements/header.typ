@@ -1,5 +1,6 @@
 #import "../types.typ": *
 #import "../settings.typ": *
+#import "../utils.typ": *
 
 
 /// Header banner that displays the course name, term, and code.
@@ -40,7 +41,8 @@
     if opts.tutorial_start_date != none {
       basic_info.push((
         title: "Tutorials:",
-        value: [Starting #opts.tutorial_start_date.display("[weekday], [month repr:long] [day]")],
+        // Use the same date formatting as the rest of the syllabus.
+        value: [Starting #format_date(opts.tutorial_start_date)],
       ))
     }
 

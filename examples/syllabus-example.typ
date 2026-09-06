@@ -26,7 +26,7 @@
       name: [Reading break],
       key: "reading-break",
       type: "holiday",
-      date: datetime(year: 2025, month: 10, day: 26),
+      date: datetime(year: 2025, month: 10, day: 27),
       duration: duration(days: 5),
     ),
   ),

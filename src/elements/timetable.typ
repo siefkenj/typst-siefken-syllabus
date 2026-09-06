@@ -90,6 +90,10 @@
       "saturday": 6,
       "sunday": 7,
     ).at(it.week_start_day, default: 1)
+    assert(
+      opts.term_end_date >= opts.term_start_date,
+      message: "`term_end_date` must not be before `term_start_date`",
+    )
     // Create an array with one day for every day of the semester.
     let all_semester_days = range(
       int((opts.term_end_date - opts.term_start_date).days()) + 1,
@@ -105,19 +109,25 @@
       d.weekday() == week_start_day
     })
 
-    let first_partial_week = if first_full_week_start_idx == 0 {
+    // A term shorter than a week may never contain a `week_start_day`, in which case
+    // `.position(..)` returns `none` and the whole term is one partial week.
+    let first_partial_week = if first_full_week_start_idx == none {
+      (all_semester_days,)
+    } else if first_full_week_start_idx == 0 {
       ()
     } else {
       (all_semester_days.slice(0, first_full_week_start_idx),)
     }
-    let all_weeks = (
-      first_partial_week
-        + all_semester_days
-          .slice(
-            first_full_week_start_idx,
-          )
-          .chunks(7)
-    )
+    let full_weeks = if first_full_week_start_idx == none {
+      ()
+    } else {
+      all_semester_days
+        .slice(
+          first_full_week_start_idx,
+        )
+        .chunks(7)
+    }
+    let all_weeks = first_partial_week + full_weeks
     let week_boundaries = all_weeks.map(week => (
       start: week.at(0),
       end: week.at(-1),
@@ -134,12 +144,22 @@
         })
     )
 
+    // `weekly_data` is matched to weeks by position, so any entries past the last week
+    // have no week to attach to. Collect them and show them under "After Classes"
+    // rather than silently dropping the content.
+    let overflow_data = if it.weekly_data.len() > week_boundaries.len() {
+      it.weekly_data.slice(week_boundaries.len())
+    } else {
+      ()
+    }
+
     let weekly_content = week_boundaries
       .enumerate()
       .map(((i, week)) => {
         let events_in_range = all_events.filter(e => {
-          // Check if the event is in the range of the week
-          date_in_range(e.date, week.start, week.end) == "during"
+          // Check if the event overlaps the week at any point. Events with a duration
+          // (e.g. a reading break) may span several weeks and belong to each of them.
+          event_overlaps_range(e, week.start, week.end)
         })
         (
           // Display number for the week
@@ -153,7 +173,10 @@
     // If there are any events that take place before classes, we add a cell
     // and display them.
     let before_classes_events = all_events.filter(e => {
-      date_in_range(e.date, opts.term_start_date, opts.term_start_date) == "before"
+      (
+        not event_overlaps_range(e, opts.term_start_date, opts.term_end_date)
+          and date_in_range(e.date, opts.term_start_date, opts.term_start_date) == "before"
+      )
     })
     let before_classes = if before_classes_events.len() > 0 {
       (
@@ -163,12 +186,18 @@
     } else { () }
 
     let after_classes_events = all_events.filter(e => {
-      date_in_range(e.date, opts.term_end_date, opts.term_end_date) == "after"
+      (
+        not event_overlaps_range(e, opts.term_start_date, opts.term_end_date)
+          and date_in_range(e.date, opts.term_end_date, opts.term_end_date) == "after"
+      )
     })
-    let after_classes = if after_classes_events.len() > 0 {
+    let after_classes = if after_classes_events.len() > 0 or overflow_data.len() > 0 {
       (
         sans(text(size: 1.2em, [After Classes])),
-        content_and_events(events: after_classes_events),
+        content_and_events(
+          content: overflow_data.join(parbreak()),
+          events: after_classes_events,
+        ),
       )
     } else { () }
 
