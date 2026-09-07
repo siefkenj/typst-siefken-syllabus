@@ -27,11 +27,16 @@
       {
         set align(right)
         set par(leading: 0.3em, justify: false)
-        let items = (
-          sans(text(size: 1.2em, {
+        // Only emit the items that actually have content. Pushing the title
+        // unconditionally would leave an empty 1.2em line above a subtitle-only
+        // annotation, making it taller than it looks and putting its first
+        // baseline out of step with the shift computed below.
+        let items = ()
+        if it.title != none {
+          items.push(sans(text(size: 1.2em, {
             it.title
-          })),
-        )
+          })))
+        }
         if it.subtitle != none {
           items.push(text(size: .85em, fill: gray.darken(10%), {
             it.subtitle
