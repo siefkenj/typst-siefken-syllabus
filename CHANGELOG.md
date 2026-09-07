@@ -2,6 +2,7 @@
 
 ## 1.0.0
 
+- Require Typst 0.15.0 or later.
 - Fix date-range computation: whole-day events are now inclusive of their end
   day, and events with a `duration` count the day they start on.
 - Events spanning a week boundary now appear in every week they overlap.

@@ -21,6 +21,9 @@
 #   6. compile the examples (import rewritten to
 #      `@preview/siefken-syllabus:<version>` in a scratch copy) against the
 #      vendored package, to validate it works as advertised
+#   7. check the assembled package against the Typst Universe submission
+#      rules (./check_universe.sh); the build fails on anything that would
+#      fail Universe CI
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -201,6 +204,9 @@ done
 for f in "$validation_examples"/*.typ; do
     TYPST_PACKAGE_PATH="$pkgroot" typst compile -f pdf "$f" /dev/null
 done
+
+echo "==> Checking the package against Typst Universe rules"
+./check_universe.sh "$PKG"
 
 echo "==> Done: $PKG/ ($(du -sh dist | cut -f1))"
 find dist -type f | sort
