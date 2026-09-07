@@ -1,0 +1,39 @@
+name: Run Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Run tests and compile examples in devcontainer
+        uses: devcontainers/ci@v0.3
+        with:
+          push: never
+          runCmd: |
+            set -eu
+            ./test/run.sh
+            typst compile --root . -f pdf examples/syllabus-example.typ syllabus-example.pdf
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build the documentation in devcontainer
+        uses: devcontainers/ci@v0.3
+        with:
+          push: never
+          runCmd: |
+            set -eu
+            # Both documentation targets, matching the commands in README.md.
+            # The HTML build exercises the `target() == "html"` branches in
+            # docs/index.typ that the PDF build never reaches.
+            typst compile --root . -f pdf docs/index.typ docs/index.pdf
+            typst compile --root . --features html --format html \
+              --input html=true docs/index.typ docs/index.html
