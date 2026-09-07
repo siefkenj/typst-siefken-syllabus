@@ -1,6 +1,7 @@
 
 #import "../types.typ": *
 #import "../settings.typ": *
+#import "../utils.typ": *
 
 
 /// An item with an annotation that hangs in the left margin.
@@ -26,11 +27,16 @@
       {
         set align(right)
         set par(leading: 0.3em, justify: false)
-        let items = (
-          sans(text(size: 1.2em, {
+        // Only emit the items that actually have content. Pushing the title
+        // unconditionally would leave an empty 1.2em line above a subtitle-only
+        // annotation, making it taller than it looks and putting its first
+        // baseline out of step with the shift computed below.
+        let items = ()
+        if it.title != none {
+          items.push(sans(text(size: 1.2em, {
             it.title
-          })),
-        )
+          })))
+        }
         if it.subtitle != none {
           items.push(text(size: .85em, fill: gray.darken(10%), {
             it.subtitle
@@ -56,14 +62,26 @@
         let annotation_height = measure(annotation).height
         let body_height = measure(body).height
         //[#(annotation_height, body_height)]
+
+        // The annotation is set larger than the body (and in a different font), so aligning
+        // the two at their tops would leave their first baselines out of step. Shift the
+        // annotation by the difference in first-baseline offsets so the baselines match.
+        let annotation_style = if it.title != none {
+          body => sans(text(size: 1.2em, body))
+        } else {
+          body => text(size: .85em, body)
+        }
+        let baseline_shift = (
+          first_baseline_offset(body => body) - first_baseline_offset(annotation_style)
+        )
+        place(annotation, dx: -opts.gutter_width, dy: baseline_shift)
+
         if body_height < annotation_height {
           // If the body is shorter than the annotation, we need to pad it to the height of the annotation
-          place(annotation, dx: -opts.gutter_width)
           block(height: annotation_height, breakable: true, {
             body
           })
         } else {
-          place(annotation, dx: -opts.gutter_width)
           body
         }
       })

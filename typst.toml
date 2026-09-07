@@ -1,7 +1,7 @@
 [package]
 name = "siefken-syllabus"
-version = "0.1.0"
-compiler = "0.13.0"
+version = "1.0.0"
+compiler = "0.15.0"
 repository = "https://github.com/siefkenj/typst-siefken-syllabus"
 entrypoint = "src/lib.typ"
 authors = ["Jason Siefken <https://github.com/siefkenj>"]
